@@ -1,0 +1,445 @@
+//backend
+
+{
+  "name": "mern_crud",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.12.9",
+    "router": "^1.3.5"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
+
+//conn.js or db.js
+
+const mongoose = require("mongoose");
+
+
+mongoose.connect("mongodb://localhost:27017/mern_crud", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+ 
+
+const dbobject = mongoose.connection
+
+dbobject.on('connected',()=>console.log('mongoDb connected!!!'))
+dbobject.on("error", function () {
+    console.log('mongo DB faile !!!')
+});
+
+module.exports = mongoose
+
+
+//server.js
+
+const express = require('express');
+const dbFile = require('./conn');
+const PORT = 5000;
+const bodyParser = require('body-parser');
+//routes import file
+
+const postRoute = require('./routes/post')
+const userRoute = require('./routes/user')
+
+const app = express();
+
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: true }))
+
+
+app.use("/api/post", postRoute);
+app.use("/api/user", userRoute);
+app.get('/', (req, res) => {
+    res.end('Hello from server')
+})
+
+app.listen(PORT, () => {
+    console.log(`Server is Running at ${PORT}`);
+})
+
+//routes 
+//1.post.js
+const express = require('express');
+const mongoose = require('mongoose')
+const router = express.Router()
+
+const schema = mongoose.Schema
+
+const postSchema = new schema({
+   
+    title:String,
+    url: String,
+    description:String,
+})
+//testing route
+
+router.get('/test',(req,res)=>{
+    res.end('helloworld using router')
+})
+
+const postModel = mongoose.model('posts', postSchema)
+
+router.post('/addpost', (req, res) => {
+    const newPost = new postModel({
+        title:req.body.title,
+        url:req.body.url,
+        description:req.body.description
+    })
+    newPost.save((err)=>!err?res.send('new post added'):res.send(err))
+})
+ 
+router.get('/getposts', (req, res) => {
+    postModel.find({}, (docs, err) => {
+        if (!err) {
+            res.send(docs)
+        }
+        else{
+            res.send(err)
+        }
+    })
+})
+
+
+module.exports=router
+
+//2.user.js
+
+const express = require('express');
+const mongoose = require('mongoose')
+const user_router = express.Router()
+
+const schema = mongoose.Schema
+
+const userSchema = new schema({
+   
+    userName:String,
+    email: String,
+    password:String,
+    password2:String
+})
+
+
+
+const postModel = mongoose.model('users',userSchema)
+
+user_router.post('/adduser', (req, res) => {
+    const newUser = new postModel({
+        userName:req.body.userName,
+        email:req.body.email,
+        password:req.body.password_1,
+        password2:req.body.password_2,
+    })
+    newUser.save((err)=>!err?res.send('new post added'):res.send(err))
+})
+
+module.exports=user_router
+
+//frontend
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@material-ui/core": "^4.11.4",
+    "@testing-library/jest-dom": "^5.12.0",
+    "@testing-library/react": "^11.2.6",
+    "@testing-library/user-event": "^12.8.3",
+    "axios": "^0.21.1",
+    "bootstrap": "^5.0.1",
+    "chart.js": "^3.2.1",
+    "leaflet": "^1.7.1",
+    "numeral": "^2.0.6",
+    "react": "^17.0.2",
+    "react-chartjs-2": "^3.0.3",
+    "react-dom": "^17.0.2",
+    "react-leaflet": "^3.1.0",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "4.0.3",
+    "uuid": "^8.3.2",
+    "web-vitals": "^1.1.2"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  },
+  "proxy":"http://localhost:5000/"
+}
+
+
+import React from 'react'
+import {BrowserRouter as Router , Route,Switch ,Link } from 'react-router-dom'
+import AddPost from './components/AddPost'
+import EditPost from './components/EditPost';
+import PostList from './components/PostList'
+import Register from './components/Register';
+
+
+
+const App = () => {
+   
+  return (
+    <div>
+      <Router>
+        <div>
+          <div>
+            <nav>
+              <ul className="d-flex m-3 ">
+                <li>
+                  <Link to="/">Home</Link>
+                </li>
+                <li>
+                  <Link to="/add">Add Post</Link>
+                </li>
+                <li>
+                  <Link to="/edit">Edit</Link>
+                </li>
+                <li>
+                  <Link to="/register">Register</Link>
+                </li>
+              </ul>
+            </nav>
+
+            {/* A <Switch> looks through its children <Route>s and
+            renders the first one that matches the current URL. */}
+           
+            <Switch>
+              <Route path="/" exact>
+                <PostList />
+              </Route>
+              <Route path="/add">
+                <AddPost />
+              </Route>
+              <Route path="/edit">
+                <EditPost />
+              </Route>
+              <Route path="/register">
+                <Register/>
+              </Route>
+            </Switch>
+          </div>
+        </div>
+      </Router>
+    </div>
+  );
+}
+
+export default App
+
+//components
+
+//AddPost
+
+import React from "react";
+import axios from 'axios';
+
+
+import "../../node_modules/bootstrap/dist/css/bootstrap.min.css";
+export default  class AddPost extends React.Component {
+  // const [title, setTitle] = useState("");
+  //   const [imageurl, setImageurl] = useState("");
+  //   const [description, setDescription] = useState("");
+  constructor(props) {
+    super(props);
+    this.state = {
+      title: "",
+      url: "",
+      description: "",
+    };
+  }
+  handleTitleChange = (e) => {
+    this.setState({ title: e.target.value });
+    console.log(this.state.title);
+  };
+  handleUrlChange = (e) => {
+    this.setState({ url: e.target.value });
+
+  };
+  handleDescriptionChange = (e) => {
+    this.setState({ description: e.target.value });
+    
+  };
+  clearFields=()=> {
+    this.setState({ title: "" });
+    this.setState({ url: "" });
+    this.setState({ description: "" });
+  }
+  handleClick = () => {
+    const post = {
+      title: this.state.title,
+      url: this.state.url,
+      description: this.state.description,
+    };
+   axios.post('api/post/addpost',post).then(res=>alert(res.data)).then(err=>console.log(err))
+    console.log(post);
+    this.clearFields();
+  };
+
+  render() {
+    return (
+      <div className="container">
+        <div className="row">
+          <input
+            onChange={this.handleTitleChange}
+            value={this.state.title}
+            type="text"
+            placeholder="enter title ....."
+            className="form-control m-3 "
+          />
+          <input
+            
+            onChange={this.handleUrlChange}
+            value={this.state.url}
+            type="imageurl"
+            placeholder="enter url  ....."
+            className="form-control m-3"
+          />
+          <textarea
+           value={this.state.description}
+            onChange={(e)=>this.handleDescriptionChange(e)}
+            cols="30"
+            rows="10"
+            placeholder="neter details on the topic"
+            className="form-control m-3"
+          ></textarea>
+          <button className="btn btn-success m-3 " onClick={this.handleClick}>
+            add post
+          </button>
+        </div>
+      </div>
+    );
+  }
+};
+//register.js
+
+import React, { Component } from 'react'
+import '../components/registerStyle.css'
+import axios from 'axios';
+export default class Register extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      userName: "",
+      email: "",
+      password_1: "",
+      password_2: "",
+    };
+  }
+  handleNameChange = (e) => {
+    this.setState({ userName: e.target.value });
+   
+  };
+  handleEmailChange = (e) => {
+    this.setState({ email: e.target.value });
+    
+  };
+  handlePassOneChange = (e) => {
+    this.setState({ password_1: e.target.value });
+  
+  };
+  handlePassTwoChange = (e) => {
+    this.setState({ password_2: e.target.value });
+    
+    };
+    handleSubmit = (e) => {
+        e.preventDefault()
+        const user = {
+            userName:this.state.userName,
+            email:this.state.email,
+            password:this.state.password_1,
+            passwordTwo:this.state.password_2,
+        }
+        axios
+          .post("api/user/adduser", user)
+          .then((res) => alert(res.data))
+          .then((err) => console.log(err));
+        console.log(user)
+    }
+  render() {
+    return (
+      <div className="container">
+        <form id="form" className="form" onSubmit={this.handleSubmit}>
+          <h2>Register With Us</h2>
+          <div className="form-control">
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              value={this.state.userName}
+              onChange={this.handleNameChange}
+              placeholder="Enter username"
+            />
+            <small>Error message</small>
+          </div>
+          <div className="form-control">
+            <label htmlFor="email">Email</label>
+            <input
+              type="text"
+              value={this.state.email}
+              onChange={this.handleEmailChange}
+              placeholder="Enter email"
+            />
+            <small>Error message</small>
+          </div>
+          <div className="form-control">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              value={this.state.password_1}
+              onChange={this.handlePassOneChange}
+              placeholder="Enter password"
+            />
+            <small>Error message</small>
+          </div>
+          <div className="form-control">
+            <label htmlFor="password2">Confirm Password</label>
+            <input
+              type="password"
+              value={this.state.password_2}
+              onChange={this.handlePassTwoChange}
+              placeholder="Enter password again"
+            />
+            <small>Error message</small>
+          </div>
+          <button type="submit" onSubmit={this.handleSubmit}>Submit</button>
+        </form>
+      </div>
+    );
+  }
+}
